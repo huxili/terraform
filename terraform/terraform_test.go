@@ -2,7 +2,6 @@ package terraform
 
 import (
 	"flag"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -81,6 +80,12 @@ func tempEnv(t *testing.T, k string, v string) func() {
 
 func testModule(t *testing.T, name string) *configs.Config {
 	t.Helper()
+	c, _ := testModuleWithSnapshot(t, name)
+	return c
+}
+
+func testModuleWithSnapshot(t *testing.T, name string) (*configs.Config, *configload.Snapshot) {
+	t.Helper()
 
 	dir := filepath.Join(fixtureDir, name)
 
@@ -102,7 +107,7 @@ func testModule(t *testing.T, name string) *configs.Config {
 		t.Fatal(diags.Error())
 	}
 
-	return config
+	return nil, config
 }
 
 // testModuleInline takes a map of path -> config strings and yields a config
@@ -156,16 +161,6 @@ func testModuleInline(t *testing.T, sources map[string]string) *configs.Config {
 	}
 
 	return config
-}
-
-func testStringMatch(t *testing.T, s fmt.Stringer, expected string) {
-	t.Helper()
-
-	actual := strings.TrimSpace(s.String())
-	expected = strings.TrimSpace(expected)
-	if actual != expected {
-		t.Fatalf("Actual\n\n%s\n\nExpected:\n\n%s", actual, expected)
-	}
 }
 
 func testProviderFuncFixed(rp ResourceProvider) ResourceProviderFactory {

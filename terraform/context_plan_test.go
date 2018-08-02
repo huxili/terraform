@@ -46,7 +46,7 @@ func TestContext2Plan_basic(t *testing.T) {
 		t.Errorf("wrong ProviderSHA256s %#v; want %#v", plan.ProviderSHA256s, ctx.providerSHA256s)
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -58,7 +58,7 @@ func TestContext2Plan_createBefore_deposed(t *testing.T) {
 	p := testProvider("aws")
 	p.DiffFn = testDiffFn
 
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: []string{"root"},
@@ -75,7 +75,7 @@ func TestContext2Plan_createBefore_deposed(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
@@ -92,7 +92,7 @@ func TestContext2Plan_createBefore_deposed(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(`
 DIFF:
 
@@ -133,7 +133,7 @@ func TestContext2Plan_createBefore_maintainRoot(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(`
 DIFF:
 
@@ -175,7 +175,7 @@ func TestContext2Plan_emptyDiff(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanEmptyStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -200,7 +200,7 @@ func TestContext2Plan_escapedVar(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanEscapedVarStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -225,7 +225,7 @@ func TestContext2Plan_minimal(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanEmptyStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -250,7 +250,7 @@ func TestContext2Plan_modules(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanModulesStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -287,7 +287,7 @@ func TestContext2Plan_moduleCycle(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanModuleCycleStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -314,7 +314,7 @@ func TestContext2Plan_moduleDeadlock(t *testing.T) {
 			t.Fatalf("err: %s", err)
 		}
 
-		actual := strings.TrimSpace(plan.String())
+		actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 		expected := strings.TrimSpace(`
 DIFF:
 
@@ -351,7 +351,7 @@ func TestContext2Plan_moduleInput(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanModuleInputStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -376,7 +376,7 @@ func TestContext2Plan_moduleInputComputed(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanModuleInputComputedStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -407,7 +407,7 @@ func TestContext2Plan_moduleInputFromVar(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanModuleInputVarStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -444,7 +444,7 @@ func TestContext2Plan_moduleMultiVar(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanModuleMultiVarStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -455,7 +455,7 @@ func TestContext2Plan_moduleOrphans(t *testing.T) {
 	m := testModule(t, "plan-modules-remove")
 	p := testProvider("aws")
 	p.DiffFn = testDiffFn
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: []string{"root", "child"},
@@ -469,7 +469,7 @@ func TestContext2Plan_moduleOrphans(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -485,7 +485,7 @@ func TestContext2Plan_moduleOrphans(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanModuleOrphansStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -498,7 +498,7 @@ func TestContext2Plan_moduleOrphansWithProvisioner(t *testing.T) {
 	p := testProvider("aws")
 	pr := testProvisioner()
 	p.DiffFn = testDiffFn
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: []string{"root"},
@@ -534,7 +534,7 @@ func TestContext2Plan_moduleOrphansWithProvisioner(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -553,7 +553,7 @@ func TestContext2Plan_moduleOrphansWithProvisioner(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(`
 DIFF:
 
@@ -810,7 +810,7 @@ func TestContext2Plan_moduleProviderVar(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanModuleProviderVarStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -835,7 +835,7 @@ func TestContext2Plan_moduleVar(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanModuleVarStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -917,7 +917,7 @@ func TestContext2Plan_moduleVarComputed(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanModuleVarComputedStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -945,7 +945,7 @@ func TestContext2Plan_nil(t *testing.T) {
 				"aws": testProviderFuncFixed(p),
 			},
 		),
-		State: &State{
+		State: mustShimLegacyState(&State{
 			Modules: []*ModuleState{
 				&ModuleState{
 					Path: rootModulePath,
@@ -959,7 +959,7 @@ func TestContext2Plan_nil(t *testing.T) {
 					},
 				},
 			},
-		},
+		}),
 	})
 
 	plan, diags := ctx.Plan()
@@ -983,7 +983,7 @@ func TestContext2Plan_preventDestroy_bad(t *testing.T) {
 				"aws": testProviderFuncFixed(p),
 			},
 		),
-		State: &State{
+		State: mustShimLegacyState(&State{
 			Modules: []*ModuleState{
 				&ModuleState{
 					Path: rootModulePath,
@@ -997,7 +997,7 @@ func TestContext2Plan_preventDestroy_bad(t *testing.T) {
 					},
 				},
 			},
-		},
+		}),
 	})
 
 	plan, err := ctx.Plan()
@@ -1020,7 +1020,7 @@ func TestContext2Plan_preventDestroy_good(t *testing.T) {
 				"aws": testProviderFuncFixed(p),
 			},
 		),
-		State: &State{
+		State: mustShimLegacyState(&State{
 			Modules: []*ModuleState{
 				&ModuleState{
 					Path: rootModulePath,
@@ -1034,7 +1034,7 @@ func TestContext2Plan_preventDestroy_good(t *testing.T) {
 					},
 				},
 			},
-		},
+		}),
 	})
 
 	plan, diags := ctx.Plan()
@@ -1058,7 +1058,7 @@ func TestContext2Plan_preventDestroy_countBad(t *testing.T) {
 				"aws": testProviderFuncFixed(p),
 			},
 		),
-		State: &State{
+		State: mustShimLegacyState(&State{
 			Modules: []*ModuleState{
 				&ModuleState{
 					Path: rootModulePath,
@@ -1078,7 +1078,7 @@ func TestContext2Plan_preventDestroy_countBad(t *testing.T) {
 					},
 				},
 			},
-		},
+		}),
 	})
 
 	plan, err := ctx.Plan()
@@ -1111,7 +1111,7 @@ func TestContext2Plan_preventDestroy_countGood(t *testing.T) {
 				"aws": testProviderFuncFixed(p),
 			},
 		),
-		State: &State{
+		State: mustShimLegacyState(&State{
 			Modules: []*ModuleState{
 				&ModuleState{
 					Path: rootModulePath,
@@ -1131,7 +1131,7 @@ func TestContext2Plan_preventDestroy_countGood(t *testing.T) {
 					},
 				},
 			},
-		},
+		}),
 	})
 
 	plan, diags := ctx.Plan()
@@ -1165,7 +1165,7 @@ func TestContext2Plan_preventDestroy_countGoodNoChange(t *testing.T) {
 				"aws": testProviderFuncFixed(p),
 			},
 		),
-		State: &State{
+		State: mustShimLegacyState(&State{
 			Modules: []*ModuleState{
 				&ModuleState{
 					Path: rootModulePath,
@@ -1183,7 +1183,7 @@ func TestContext2Plan_preventDestroy_countGoodNoChange(t *testing.T) {
 					},
 				},
 			},
-		},
+		}),
 	})
 
 	plan, diags := ctx.Plan()
@@ -1207,7 +1207,7 @@ func TestContext2Plan_preventDestroy_destroyPlan(t *testing.T) {
 				"aws": testProviderFuncFixed(p),
 			},
 		),
-		State: &State{
+		State: mustShimLegacyState(&State{
 			Modules: []*ModuleState{
 				&ModuleState{
 					Path: rootModulePath,
@@ -1221,7 +1221,7 @@ func TestContext2Plan_preventDestroy_destroyPlan(t *testing.T) {
 					},
 				},
 			},
-		},
+		}),
 		Destroy: true,
 	})
 
@@ -1275,7 +1275,7 @@ func TestContext2Plan_computed(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanComputedStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -1482,7 +1482,7 @@ func TestContext2Plan_dataSourceTypeMismatch(t *testing.T) {
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		// Pretend like we ran a Refresh and the AZs data source was populated.
-		State: &State{
+		State: mustShimLegacyState(&State{
 			Modules: []*ModuleState{
 				&ModuleState{
 					Path: rootModulePath,
@@ -1501,7 +1501,7 @@ func TestContext2Plan_dataSourceTypeMismatch(t *testing.T) {
 					},
 				},
 			},
-		},
+		}),
 		ProviderResolver: ResourceProviderResolverFixed(
 			map[string]ResourceProviderFactory{
 				"aws": testProviderFuncFixed(p),
@@ -1574,7 +1574,7 @@ func TestContext2Plan_dataResourceBecomesComputed(t *testing.T) {
 				"aws": testProviderFuncFixed(p),
 			},
 		),
-		State: &State{
+		State: mustShimLegacyState(&State{
 			Modules: []*ModuleState{
 				&ModuleState{
 					Path: rootModulePath,
@@ -1592,7 +1592,7 @@ func TestContext2Plan_dataResourceBecomesComputed(t *testing.T) {
 					},
 				},
 			},
-		},
+		}),
 	})
 
 	plan, diags := ctx.Plan()
@@ -1661,7 +1661,7 @@ func TestContext2Plan_computedList(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanComputedListStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -1688,7 +1688,7 @@ func TestContext2Plan_computedMultiIndex(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanComputedMultiIndexStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -1717,7 +1717,7 @@ func TestContext2Plan_count(t *testing.T) {
 		t.Fatalf("bad: %#v", plan.Diff.RootModule().Resources)
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanCountStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -1783,7 +1783,7 @@ func TestContext2Plan_countModuleStatic(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(`
 DIFF:
 
@@ -1819,7 +1819,7 @@ func TestContext2Plan_countModuleStaticGrandchild(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(`
 DIFF:
 
@@ -1855,7 +1855,7 @@ func TestContext2Plan_countIndex(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanCountIndexStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -1886,7 +1886,7 @@ func TestContext2Plan_countVar(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanCountVarStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -1921,7 +1921,7 @@ func TestContext2Plan_countZero(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanCountZeroStr)
 	if actual != expected {
 		t.Logf("expected:\n%s", expected)
@@ -1947,7 +1947,7 @@ func TestContext2Plan_countOneIndex(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanCountOneIndexStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -1958,7 +1958,7 @@ func TestContext2Plan_countDecreaseToOne(t *testing.T) {
 	m := testModule(t, "plan-count-dec")
 	p := testProvider("aws")
 	p.DiffFn = testDiffFn
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: rootModulePath,
@@ -1988,7 +1988,7 @@ func TestContext2Plan_countDecreaseToOne(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -2004,7 +2004,7 @@ func TestContext2Plan_countDecreaseToOne(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanCountDecreaseStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -2015,7 +2015,7 @@ func TestContext2Plan_countIncreaseFromNotSet(t *testing.T) {
 	m := testModule(t, "plan-count-inc")
 	p := testProvider("aws")
 	p.DiffFn = testDiffFn
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: rootModulePath,
@@ -2033,7 +2033,7 @@ func TestContext2Plan_countIncreaseFromNotSet(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -2049,7 +2049,7 @@ func TestContext2Plan_countIncreaseFromNotSet(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanCountIncreaseStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -2060,7 +2060,7 @@ func TestContext2Plan_countIncreaseFromOne(t *testing.T) {
 	m := testModule(t, "plan-count-inc")
 	p := testProvider("aws")
 	p.DiffFn = testDiffFn
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: rootModulePath,
@@ -2078,7 +2078,7 @@ func TestContext2Plan_countIncreaseFromOne(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -2094,7 +2094,7 @@ func TestContext2Plan_countIncreaseFromOne(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanCountIncreaseFromOneStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -2110,7 +2110,7 @@ func TestContext2Plan_countIncreaseFromOneCorrupted(t *testing.T) {
 	m := testModule(t, "plan-count-inc")
 	p := testProvider("aws")
 	p.DiffFn = testDiffFn
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: rootModulePath,
@@ -2138,7 +2138,7 @@ func TestContext2Plan_countIncreaseFromOneCorrupted(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -2154,7 +2154,7 @@ func TestContext2Plan_countIncreaseFromOneCorrupted(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanCountIncreaseFromOneCorruptedStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -2184,7 +2184,7 @@ func TestContext2Plan_countIncreaseWithSplatReference(t *testing.T) {
 	}
 	p.DiffFn = testDiffFn
 
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: rootModulePath,
@@ -2228,7 +2228,7 @@ func TestContext2Plan_countIncreaseWithSplatReference(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -2244,7 +2244,7 @@ func TestContext2Plan_countIncreaseWithSplatReference(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(`
 DIFF:
 
@@ -2279,7 +2279,7 @@ func TestContext2Plan_destroy(t *testing.T) {
 	m := testModule(t, "plan-destroy")
 	p := testProvider("aws")
 	p.DiffFn = testDiffFn
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: rootModulePath,
@@ -2299,7 +2299,7 @@ func TestContext2Plan_destroy(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -2320,7 +2320,7 @@ func TestContext2Plan_destroy(t *testing.T) {
 		t.Fatalf("bad: %#v", plan.Diff.RootModule().Resources)
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanDestroyStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -2331,7 +2331,7 @@ func TestContext2Plan_moduleDestroy(t *testing.T) {
 	m := testModule(t, "plan-module-destroy")
 	p := testProvider("aws")
 	p.DiffFn = testDiffFn
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: rootModulePath,
@@ -2356,7 +2356,7 @@ func TestContext2Plan_moduleDestroy(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -2373,7 +2373,7 @@ func TestContext2Plan_moduleDestroy(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanModuleDestroyStr)
 	if actual != expected {
 		t.Fatalf("bad:\n%s\n\nexpected:\n\n%s", actual, expected)
@@ -2385,7 +2385,7 @@ func TestContext2Plan_moduleDestroyCycle(t *testing.T) {
 	m := testModule(t, "plan-module-destroy-gh-1835")
 	p := testProvider("aws")
 	p.DiffFn = testDiffFn
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: []string{"root", "a_module"},
@@ -2410,7 +2410,7 @@ func TestContext2Plan_moduleDestroyCycle(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -2427,7 +2427,7 @@ func TestContext2Plan_moduleDestroyCycle(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanModuleDestroyCycleStr)
 	if actual != expected {
 		t.Fatalf("bad:\n%s\n\nexpected:\n\n%s", actual, expected)
@@ -2438,7 +2438,7 @@ func TestContext2Plan_moduleDestroyMultivar(t *testing.T) {
 	m := testModule(t, "plan-module-destroy-multivar")
 	p := testProvider("aws")
 	p.DiffFn = testDiffFn
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path:      rootModulePath,
@@ -2462,7 +2462,7 @@ func TestContext2Plan_moduleDestroyMultivar(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -2479,7 +2479,7 @@ func TestContext2Plan_moduleDestroyMultivar(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanModuleDestroyMultivarStr)
 	if actual != expected {
 		t.Fatalf("bad:\n%s\n\nexpected:\n\n%s", actual, expected)
@@ -2521,7 +2521,7 @@ func TestContext2Plan_pathVar(t *testing.T) {
 		t.Fatalf("err: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanPathVarStr)
 
 	// Warning: this ordering REALLY matters for this test. The
@@ -2541,7 +2541,7 @@ func TestContext2Plan_pathVar(t *testing.T) {
 func TestContext2Plan_diffVar(t *testing.T) {
 	m := testModule(t, "plan-diffvar")
 	p := testProvider("aws")
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: rootModulePath,
@@ -2558,7 +2558,7 @@ func TestContext2Plan_diffVar(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -2592,7 +2592,7 @@ func TestContext2Plan_diffVar(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanDiffVarStr)
 	if actual != expected {
 		t.Fatalf("actual:\n%s\n\nexpected:\n%s", actual, expected)
@@ -2657,7 +2657,7 @@ func TestContext2Plan_orphan(t *testing.T) {
 	m := testModule(t, "plan-orphan")
 	p := testProvider("aws")
 	p.DiffFn = testDiffFn
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: rootModulePath,
@@ -2671,7 +2671,7 @@ func TestContext2Plan_orphan(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -2687,7 +2687,7 @@ func TestContext2Plan_orphan(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanOrphanStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -2719,7 +2719,7 @@ func TestContext2Plan_state(t *testing.T) {
 	m := testModule(t, "plan-good")
 	p := testProvider("aws")
 	p.DiffFn = testDiffFn
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: rootModulePath,
@@ -2733,7 +2733,7 @@ func TestContext2Plan_state(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -2753,7 +2753,7 @@ func TestContext2Plan_state(t *testing.T) {
 		t.Fatalf("bad: %#v", plan.Diff.RootModule().Resources)
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanStateStr)
 	if actual != expected {
 		t.Fatalf("bad:\n%s\n\nexpected:\n\n%s", actual, expected)
@@ -2764,7 +2764,7 @@ func TestContext2Plan_taint(t *testing.T) {
 	m := testModule(t, "plan-taint")
 	p := testProvider("aws")
 	p.DiffFn = testDiffFn
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: rootModulePath,
@@ -2786,7 +2786,7 @@ func TestContext2Plan_taint(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -2802,7 +2802,7 @@ func TestContext2Plan_taint(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanTaintStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -2824,7 +2824,7 @@ func TestContext2Plan_taintIgnoreChanges(t *testing.T) {
 	p.ApplyFn = testApplyFn
 	p.DiffFn = testDiffFn
 
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: rootModulePath,
@@ -2843,7 +2843,7 @@ func TestContext2Plan_taintIgnoreChanges(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -2859,7 +2859,7 @@ func TestContext2Plan_taintIgnoreChanges(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanTaintIgnoreChangesStr)
 	if actual != expected {
 		t.Fatalf("wrong result\n\ngot:\n%s\n\nwant:\n%s", actual, expected)
@@ -2871,7 +2871,7 @@ func TestContext2Plan_taintDestroyInterpolatedCountRace(t *testing.T) {
 	m := testModule(t, "plan-taint-interpolated-count")
 	p := testProvider("aws")
 	p.DiffFn = testDiffFn
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: rootModulePath,
@@ -2894,7 +2894,7 @@ func TestContext2Plan_taintDestroyInterpolatedCountRace(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -2911,7 +2911,7 @@ func TestContext2Plan_taintDestroyInterpolatedCountRace(t *testing.T) {
 			t.Fatalf("unexpected errors: %s", diags.Err())
 		}
 
-		actual := strings.TrimSpace(plan.String())
+		actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 		expected := strings.TrimSpace(`
 DIFF:
 
@@ -2956,7 +2956,7 @@ func TestContext2Plan_targeted(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(`
 DIFF:
 
@@ -2996,7 +2996,7 @@ func TestContext2Plan_targetedCrossModule(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(`
 DIFF:
 
@@ -3052,7 +3052,7 @@ func TestContext2Plan_targetedModuleWithProvider(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(`
 DIFF:
 
@@ -3079,7 +3079,7 @@ func TestContext2Plan_targetedOrphan(t *testing.T) {
 				"aws": testProviderFuncFixed(p),
 			},
 		),
-		State: &State{
+		State: mustShimLegacyState(&State{
 			Modules: []*ModuleState{
 				&ModuleState{
 					Path: rootModulePath,
@@ -3099,7 +3099,7 @@ func TestContext2Plan_targetedOrphan(t *testing.T) {
 					},
 				},
 			},
-		},
+		}),
 		Destroy: true,
 		Targets: []addrs.Targetable{
 			addrs.RootModuleInstance.Resource(
@@ -3113,7 +3113,7 @@ func TestContext2Plan_targetedOrphan(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(`DIFF:
 
 DESTROY: aws_instance.orphan
@@ -3142,7 +3142,7 @@ func TestContext2Plan_targetedModuleOrphan(t *testing.T) {
 				"aws": testProviderFuncFixed(p),
 			},
 		),
-		State: &State{
+		State: mustShimLegacyState(&State{
 			Modules: []*ModuleState{
 				&ModuleState{
 					Path: []string{"root", "child"},
@@ -3162,7 +3162,7 @@ func TestContext2Plan_targetedModuleOrphan(t *testing.T) {
 					},
 				},
 			},
-		},
+		}),
 		Destroy: true,
 		Targets: []addrs.Targetable{
 			addrs.RootModuleInstance.Child("child", addrs.NoKey).Resource(
@@ -3176,7 +3176,7 @@ func TestContext2Plan_targetedModuleOrphan(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(`DIFF:
 
 module.child:
@@ -3219,7 +3219,7 @@ func TestContext2Plan_targetedModuleUntargetedVariable(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(`
 DIFF:
 
@@ -3290,14 +3290,14 @@ func TestContext2Plan_targetedOverTen(t *testing.T) {
 				"aws": testProviderFuncFixed(p),
 			},
 		),
-		State: &State{
+		State: mustShimLegacyState(&State{
 			Modules: []*ModuleState{
 				&ModuleState{
 					Path:      rootModulePath,
 					Resources: resources,
 				},
 			},
-		},
+		}),
 		Targets: []addrs.Targetable{
 			addrs.RootModuleInstance.ResourceInstance(
 				addrs.ManagedResourceMode, "aws_instance", "foo", addrs.IntKey(1),
@@ -3310,7 +3310,7 @@ func TestContext2Plan_targetedOverTen(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	sort.Strings(expectedState)
 	expected := strings.TrimSpace(`
 DIFF:
@@ -3419,7 +3419,7 @@ func TestContext2Plan_ignoreChanges(t *testing.T) {
 	}
 	p.DiffFn = testDiffFn
 
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: rootModulePath,
@@ -3434,7 +3434,7 @@ func TestContext2Plan_ignoreChanges(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -3460,7 +3460,7 @@ func TestContext2Plan_ignoreChanges(t *testing.T) {
 		t.Fatalf("bad: %#v", plan.Diff.RootModule().Resources)
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanIgnoreChangesStr)
 	if actual != expected {
 		t.Fatalf("bad:\n%s\n\nexpected\n\n%s", actual, expected)
@@ -3482,7 +3482,7 @@ func TestContext2Plan_ignoreChangesWildcard(t *testing.T) {
 	}
 	p.DiffFn = testDiffFn
 
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: rootModulePath,
@@ -3500,7 +3500,7 @@ func TestContext2Plan_ignoreChangesWildcard(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -3530,7 +3530,7 @@ func TestContext2Plan_ignoreChangesWildcard(t *testing.T) {
 		t.Fatalf("unexpected resource diffs in root module: %s", spew.Sdump(plan.Diff.RootModule().Resources))
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanIgnoreChangesWildcardStr)
 	if actual != expected {
 		t.Fatalf("bad:\n%s\n\nexpected\n\n%s", actual, expected)
@@ -3643,7 +3643,7 @@ func TestContext2Plan_computedValueInMap(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanComputedValueInMap)
 	if actual != expected {
 		t.Fatalf("bad:\n%s\n\nexpected\n\n%s", actual, expected)
@@ -3686,7 +3686,7 @@ func TestContext2Plan_moduleVariableFromSplat(t *testing.T) {
 		t.Fatalf("unexpected errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(testTerraformPlanModuleVariableFromSplat)
 	if actual != expected {
 		t.Fatalf("bad:\n%s\n\nexpected\n\n%s", actual, expected)
@@ -3813,7 +3813,7 @@ func TestContext2Plan_ignoreChangesWithFlatmaps(t *testing.T) {
 			},
 		},
 	}
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: rootModulePath,
@@ -3835,7 +3835,7 @@ func TestContext2Plan_ignoreChangesWithFlatmaps(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -3870,7 +3870,7 @@ func TestContext2Plan_resourceNestedCount(t *testing.T) {
 	p.RefreshFn = func(i *InstanceInfo, is *InstanceState) (*InstanceState, error) {
 		return is, nil
 	}
-	s := &State{
+	s := mustShimLegacyState(&State{
 		Modules: []*ModuleState{
 			&ModuleState{
 				Path: rootModulePath,
@@ -3942,7 +3942,7 @@ func TestContext2Plan_resourceNestedCount(t *testing.T) {
 				},
 			},
 		},
-	}
+	})
 	ctx := testContext2(t, &ContextOpts{
 		Config: m,
 		ProviderResolver: ResourceProviderResolverFixed(
@@ -3968,7 +3968,7 @@ func TestContext2Plan_resourceNestedCount(t *testing.T) {
 		t.Fatalf("plan errors: %s", diags.Err())
 	}
 
-	actual := strings.TrimSpace(plan.String())
+	actual := strings.TrimSpace(legacyPlanComparisonString(ctx.State(), plan.Changes))
 	expected := strings.TrimSpace(`
 DIFF:
 
