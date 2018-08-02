@@ -77,6 +77,7 @@ func (c *InitCommand) Run(args []string) int {
 			PluginProtocolVersion: plugin.Handshake.ProtocolVersion,
 			SkipVerify:            !flagVerifyPlugins,
 			Ui:                    c.Ui,
+			Services:              c.Services,
 		}
 	}
 
